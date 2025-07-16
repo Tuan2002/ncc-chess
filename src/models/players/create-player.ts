@@ -13,10 +13,6 @@ export class CreatePlayerDto {
   @Expose()
   @IsOptional()
   @IsString()
-  email?: string;
-  @Expose()
-  @IsOptional()
-  @IsString()
   displayName?: string;
   @Expose()
   @IsOptional()

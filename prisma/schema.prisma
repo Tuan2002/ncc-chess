@@ -16,7 +16,6 @@ model Player {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   userName    String   @unique
   mezonId     String?  @unique
-  email       String?  @unique
   displayName String?
   avatarUrl   String?
   elo         Int      @default(0)
