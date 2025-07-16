@@ -1,10 +1,10 @@
-# Mezon Bot News
+# Mezon CHESS
 
-A Node.js-based bot for handling chat commands and providing news updates.
+A Node.js-based bot for handling chat commands and providing related functionalities in the Mezon platform.
 
 ## Features
 
-- Responds to chat commands such as `*ping`, `*help`, `*categories`, and `*news`.
+- Responds to chat commands such as `*ping`, `*help`, `*chess register`, `*chess players`, `*chess donation`, and `*chess info`.
 - Fetches and displays news based on user input.
 - Built with TypeScript for type safety and scalability.
 
@@ -47,8 +47,10 @@ The bot supports the following commands:
 
 - `*ping`: Check if the bot is online.
 - `*help`: Get a list of available commands.
-- `*categories`: List available news categories.
-- `*news <source>`: Fetch news from a specific source.
+- `*chess register`: Register for new players.
+- `*chess players`: Get a list of registered players.
+- `*chess donation`: View donation information.
+- `*chess info`: Get system statistics and information. 
 
 ## Project Structure
 
