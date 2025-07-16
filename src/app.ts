@@ -37,6 +37,7 @@ class Application {
       this.server.app.use(bodyParser.urlencoded({ extended: true }));
       this.server.app.use(scopePerRequest(container));
       this.server.app.use(asyncLocalStorageMiddleware());
+      this.server.app.use("/api", loadControllers("./controllers/*.*s", { cwd: __dirname }));
     })();
   }
   close() {

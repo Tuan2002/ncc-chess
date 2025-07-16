@@ -11,23 +11,29 @@ import { ChannelMessage, EMarkdownType, MezonClient, TokenSentEvent } from "mezo
 import { CommonMessagesService } from "../bot-messages/common-messages";
 import { PlayersMessagesService } from "../bot-messages/players-messages";
 import { PlayerService } from "../players/player-service";
+import { DonationService } from "../players/donation-service";
+import { DonationData } from "@/models/donations/donation-data";
+import { CreateDonationDto } from "@/models/donations/create-donation";
 class MezonBotService {
 
   private client: MezonClient;
   private _commonMessagesService: CommonMessagesService;
   private _playersMessagesService: PlayersMessagesService;
   private _playerService: PlayerService;
+  private _donationService: DonationService;
 
   constructor(
     CommonMessagesService: CommonMessagesService,
     PlayersMessagesService: PlayersMessagesService,
-    PlayerService: PlayerService
+    PlayerService: PlayerService,
+    DonationService: DonationService
   ) {
     this.client = new MezonClient(process.env.MEZON_BOT_TOKEN);
     this.client.login().then(() => {
       console.log("Mezon Bot is ready!");
     })
     this._playerService = PlayerService;
+    this._donationService = DonationService;
     this._commonMessagesService = CommonMessagesService;
     this._playersMessagesService = PlayersMessagesService;
     this._commonMessagesService.injectClient(this.client);
@@ -58,6 +64,15 @@ class MezonBotService {
       case commandMessage.match(ChatCommands.PLAYERS)?.input:
         this._playersMessagesService.getPlayers(event);
         break;
+
+      case commandMessage.match(ChatCommands.DONATE)?.input:
+        this._playersMessagesService.getDonations(event);
+        break;
+
+      case commandMessage.match(ChatCommands.INFO)?.input:
+        this._playersMessagesService.getSystemStatistics(event);
+        break;
+
       default:
         break;
     }
@@ -73,7 +88,46 @@ class MezonBotService {
       return;
     }
 
+    if (event.note === QRCodeType.DONATION) {
+      await this.handleDonation(event);
+      return;
+    }
+
     await this.handleChatRegister(event);
+  }
+
+  private async handleDonation(event: TokenSentEvent): Promise<void> {
+    try {
+      const nccUser: NCCUser = NCC_USERS.find(user => user.id === event.sender_id);
+      const donationData: CreateDonationDto = {
+        mezonId: event.sender_id,
+        userName: event.sender_name,
+        displayName: nccUser?.display_name || event.sender_name,
+        avatarUrl: nccUser?.avatar_url,
+        amount: event.amount,
+      };
+
+      const response = await this._donationService.createDonationAsync(donationData);
+      if (!response.isSuccess) {
+        await this.refundTokenAsync(
+          event.receiver_id,
+          event.sender_id,
+          event.amount,
+          response.message || "Lỗi khi gửi đóng góp, vui lòng thử lại sau"
+        );
+        return;
+      }
+
+      await this.sendDonationEvent(response.data);
+    } catch (error) {
+      console.error("Error handling donation:", error);
+      await this.refundTokenAsync(
+        event.receiver_id,
+        event.sender_id,
+        event.amount,
+        "Lỗi khi xử lý đóng góp"
+      );
+    }
   }
 
   private async handleDirectRegister(event: TokenSentEvent): Promise<void> {
@@ -237,6 +291,44 @@ class MezonBotService {
     } catch (error) {
       console.error("Error sending player joined event:", error);
       return;
+    }
+  }
+
+  public async sendDonationEvent(donationData: DonationData): Promise<void> {
+    try {
+      const notifyChannel = await this.client.channels.fetch(process.env.NOTIFY_CHANNEL_ID);
+      if (!notifyChannel) {
+        console.error("Notify channel not found");
+        return;
+      }
+
+      const donationMessage = `💰 Nhận tiền ủng hộ giải đầu từ: ${donationData.userName}`;
+      await notifyChannel.send({
+        t: donationMessage,
+        mk: [
+          {
+            type: EMarkdownType.PRE,
+            s: 0,
+            e: donationMessage.length,
+          },
+        ],
+        embed: [
+          {
+            color: getRandomColor(),
+            title: "Thông tin đóng góp",
+            description: `
+            Người dùng: ${donationData.userName}
+            Số tiền đã đóng góp: ${donationData.amount.toLocaleString("vi-VN") || 0} VNĐ
+            Ngày cập nhật: ${dayjs(donationData.updatedAt).format('DD/MM/YYYY')}
+            `,
+            thumbnail: {
+              url: donationData.avatarUrl || "https://cdn.mezon.vn/1837043892743049216/1840654271217930240/1827994776956309500/857_0246x0w.webp",
+            },
+          },
+        ]
+      });
+    } catch (error) {
+      console.error("Error sending donation event:", error);
     }
   }
 }

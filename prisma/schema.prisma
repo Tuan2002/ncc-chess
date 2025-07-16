@@ -25,3 +25,14 @@ model Player {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
+
+model Donation {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  mezonId     String   @unique
+  userName    String   @unique
+  displayName String?
+  avatarUrl   String?
+  amount      Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

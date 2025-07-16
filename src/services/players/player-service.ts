@@ -1,3 +1,4 @@
+import { QRCodeType } from "@/constants/qrcode-type";
 import { RegisterStatus } from "@/constants/resgister-status";
 import { CreatePlayerDto } from "@/models/players/create-player";
 import { PlayerData } from "@/models/players/player-data";
@@ -219,6 +220,64 @@ export class PlayerService {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         isSuccess: false,
         message: "Lỗi máy chủ khi lấy thông tin người chơi, vui lòng thử lại sau",
+      };
+    }
+  }
+
+  getQrCode(): ServiceResponse {
+    const qrCodeRegisterData = JSON.stringify({
+      receiver_id: process.env.MEZON_BOT_ID,
+      receiver_name: 'NCC Chess Vinh',
+      amount: process.env.REGISTER_FEE || 1,
+      note: QRCodeType.DIRECT,
+    });
+
+    const qrCodeDonationData = JSON.stringify({
+      receiver_id: process.env.MEZON_BOT_ID,
+      receiver_name: 'NCC Chess Vinh',
+      amount: 1000,
+      note: QRCodeType.DONATION,
+    });
+
+
+    return {
+      statusCode: StatusCodes.OK,
+      isSuccess: true,
+      message: "Lấy mã QR thành công",
+      data: {
+        registerCode: qrCodeRegisterData,
+        donationCode: qrCodeDonationData,
+      },
+    };
+  }
+
+  async getSystemStatics(): Promise<ServiceResponse> {
+    try {
+      const maxRegister = parseInt(process.env.MAX_REGISTER || "256", 10);
+      const currentRegistered = await this._prismaService.player.count({
+        where: { status: RegisterStatus.APPROVED },
+      });
+      const totalDonationAmount = await this._prismaService.donation.aggregate({
+        _sum: { amount: true },
+      });
+
+      return {
+        statusCode: StatusCodes.OK,
+        isSuccess: true,
+        message: "Lấy thống kê đăng ký thành công",
+        data: {
+          maxRegister: maxRegister,
+          currentRegistered: currentRegistered,
+          isFull: currentRegistered >= maxRegister,
+          totalDonationAmount: totalDonationAmount._sum.amount || 0,
+        },
+      };
+    } catch (error) {
+      console.error("Error fetching registration statistics:", error);
+      return {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        isSuccess: false,
+        message: "Lỗi máy chủ khi lấy thống kê đăng ký, vui lòng thử lại sau",
       };
     }
   }

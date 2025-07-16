@@ -1,4 +1,4 @@
 export const corsConfig = {
-  origin: ["http://localhost:5173", "https://admin.socket.io", "https://duckrace.vncsoft.com", "https://duck-race.nccsoft.vn", "https://duck-race.ncc.studio"],
+  origin: ["http://localhost:3000", "https://nccvinh.store", "https://www.nccvinh.store"],
   credentials: true,
 };

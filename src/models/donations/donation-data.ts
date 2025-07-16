@@ -1,7 +1,7 @@
 import { Expose } from "class-transformer";
 import { IsDate, IsNumber, IsString } from "class-validator";
 
-export class PlayerData {
+export class DonationData {
   @Expose()
   @IsString()
   id: string;
@@ -19,11 +19,11 @@ export class PlayerData {
   avatarUrl?: string;
   @Expose()
   @IsNumber()
-  elo: number;
-  @Expose()
-  @IsString()
-  note?: string;
+  amount?: number;
   @Expose()
   @IsDate()
   createdAt: Date;
+  @Expose()
+  @IsDate()
+  updatedAt: Date;
 }

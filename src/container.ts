@@ -6,6 +6,7 @@ import { PlayersMessagesService } from "./services/bot-messages/players-messages
 import PrismaService from "./services/databases/prisma-service";
 import MezonBotService from "./services/mezon-client/mezon-bot-service";
 import { PlayerService } from "./services/players/player-service";
+import { DonationService } from "./services/players/donation-service";
 const container = createContainer({
   injectionMode: InjectionMode.CLASSIC,
 });
@@ -16,6 +17,7 @@ container.register({
   PrismaService: asClass(PrismaService).singleton(),
   MezonBotService: asClass(MezonBotService).singleton(),
   PlayerService: asClass(PlayerService).singleton(),
+  DonationService: asClass(DonationService).singleton(),
   CommonMessagesService: asClass(CommonMessagesService).singleton(),
   PlayersMessagesService: asClass(PlayersMessagesService).singleton()
 });
