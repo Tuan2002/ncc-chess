@@ -173,7 +173,7 @@ export class PlayersMessagesService {
         `${index + 1}. ${donation.userName}
         - Số tiền đã đóng góp: ${donation.amount.toLocaleString("vi-VN") || 0} VNĐ
         - Ngày cập nhật: ${dayjs(donation.updatedAt).format('DD/MM/YYYY')}
-      `).join('\n\n');
+      `).join('\n');
       await currentChannel.send({
         embed: [
           {
