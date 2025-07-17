@@ -113,8 +113,6 @@ export class PlayersMessagesService {
       const playersList: string[] =
         players.data?.map((player: PlayerData, index) =>
           `${index + 1}. ${player.userName}
-       - ELO: ${player?.elo}
-       - Slogan: ${player?.note || "Vui là chính, giải thưởng là chủ yếu"}
        - Ngày đăng ký: ${dayjs(player.createdAt).format('DD/MM/YYYY')}`,
         );
       const replyMessage = playersList.join('\n\n');
