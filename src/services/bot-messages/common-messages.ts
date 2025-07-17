@@ -23,7 +23,7 @@ export class CommonMessagesService {
         - *help: Hiển thị danh sách các câu lệnh
         - *chess register: Đăng ký tham gia giải đấu
         - *chess players: Hiển thị danh sách tuyển thủ đã đăng ký
-        - *chess sponsors: Hiển thị danh sách nhà tài trợ
+        - *chess donation: Hiển thị danh sách nhà tài trợ
         `;
         currentChannel.send({
             t: replyMessage,

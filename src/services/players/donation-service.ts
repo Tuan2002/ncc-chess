@@ -69,6 +69,7 @@ export class DonationService {
     try {
       const donations = await this._prismaService.donation.findMany({
         orderBy: { amount: "desc" },
+        take: 10,
       });
       return {
         statusCode: StatusCodes.OK,

@@ -172,7 +172,7 @@ export class PlayersMessagesService {
         return;
       }
       const donationsList = donations.map((donation, index) => 
-        `${index + 1}. Người dùng: ${donation.userName}
+        `${index + 1}. ${donation.userName}
         - Số tiền đã đóng góp: ${donation.amount.toLocaleString("vi-VN") || 0} VNĐ
         - Ngày cập nhật: ${dayjs(donation.updatedAt).format('DD/MM/YYYY')}
       `).join('\n\n');
@@ -180,7 +180,7 @@ export class PlayersMessagesService {
         embed: [
           {
             color: getRandomColor(),
-            title: `DANH SÁCH ĐÓNG GÓP GIẢI ĐẤU NCC CHESS VINH`,
+            title: `TOP 10 ĐÓNG GÓP GIẢI ĐẤU NCC CHESS VINH`,
             description: '```' + donationsList + '```',
             timestamp: new Date().toISOString(),
             footer: {

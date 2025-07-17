@@ -302,7 +302,7 @@ class MezonBotService {
         return;
       }
 
-      const donationMessage = `💰 Nhận tiền ủng hộ giải đầu từ: ${donationData.userName}`;
+      const donationMessage = `💰 Nhận tiền ủng hộ giải đấu từ: ${donationData.userName}`;
       await notifyChannel.send({
         t: donationMessage,
         mk: [
