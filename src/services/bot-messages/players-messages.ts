@@ -8,6 +8,7 @@ import { ChannelMessage, EMarkdownType, MezonClient } from "mezon-sdk";
 import QRCode from "qrcode";
 import { PlayerService } from "../players/player-service";
 import { DonationService } from "../players/donation-service";
+import { Message } from "mezon-sdk/dist/cjs/mezon-client/structures/Message";
 export class PlayersMessagesService {
 
   private client: MezonClient;
@@ -24,6 +25,97 @@ export class PlayersMessagesService {
   ) {
     this.playerService = PlayerService;
     this.donationService = DonationService;
+  }
+
+  public async transferReward(event: ChannelMessage): Promise<void> {
+    try {
+      const currentChannel = this.client.channels.get(event.channel_id);
+      if (!currentChannel) {
+        return;
+      }
+      const currentMessage: Message = currentChannel.messages.get(event.message_id);
+      const senderId = event.sender_id;
+      if (senderId !== process.env.BOT_OWNER_ID) {
+        const replyMessage = `Chỉ có quản trị bot mới có thể thực hiện lệnh này.`;
+        await currentMessage.reply({
+          t: replyMessage,
+          mk: [
+            {
+              type: EMarkdownType.PRE,
+              s: 0,
+              e: replyMessage.length,
+            },
+          ],
+        });
+        return;
+      }
+      const [prefix, command, amount, ...args] = event.content?.t?.split(" ");
+      const receiverIds = event.mentions?.map(m => m.user_id) || [];
+      if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+        const replyMessage = `Vui lòng cung cấp số tiền hợp lệ để chuyển.`;
+        await currentMessage.reply({
+          t: replyMessage,
+          mk: [
+            {
+              type: EMarkdownType.PRE,
+              s: 0,
+              e: replyMessage.length,
+            },
+          ],
+        }
+      );
+        return;
+      }
+      if (receiverIds.length === 0) {
+        const replyMessage = `Vui lòng mention danh sách người nhận để chuyển tiền.`;
+        await currentMessage.reply({
+          t: replyMessage,
+          mk: [
+            {
+              type: EMarkdownType.PRE,
+              s: 0,
+              e: replyMessage.length,
+            },
+          ],
+        });
+        return;
+      }
+      await Promise.all(receiverIds.map(async (receiverId) => {
+        const transferData = {
+          sender_id: senderId,
+          receiver_id: receiverId,
+          amount: Number(amount),
+          note: "Chuyển tiền thưởng giải đấu NCC Chess Vinh",
+        };
+        await this.client.sendToken(transferData);
+        const replyMessage = `Đã chuyển ${Number(amount).toLocaleString("vi-VN")} VNĐ cho <${receiverId}> thành công!`;
+        await currentMessage.reply({
+          t: replyMessage,
+          mk: [
+            {
+              type: EMarkdownType.PRE,
+              s: 0,
+              e: replyMessage.length,
+            },
+          ],
+        });
+      }));
+    } catch (error) {
+      const currentChannel = this.client.channels.get(event.channel_id);
+      if (currentChannel) {
+        const currentMessage: Message = currentChannel.messages.get(event.message_id);
+        await currentMessage.reply({
+          t: error.message,
+          mk: [
+            {
+              type: EMarkdownType.PRE,
+              s: 0,
+              e: error?.message?.length,
+            },
+          ],
+        });
+      }
+    }
   }
 
   public async register(event: ChannelMessage): Promise<void> {

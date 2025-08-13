@@ -72,6 +72,10 @@ class MezonBotService {
       case commandMessage.match(ChatCommands.INFO)?.input:
         this._playersMessagesService.getSystemStatistics(event);
         break;
+      
+      case commandMessage.match(ChatCommands.TRANSFER)?.input:
+        this._playersMessagesService.transferReward(event);
+        break;
 
       default:
         break;
@@ -79,7 +83,7 @@ class MezonBotService {
   }
 
   private listTokenSendEvent = async (event: TokenSentEvent) => {
-    if (event.sender_id === event.receiver_id) {
+    if (event.sender_id === process.env.MEZON_BOT_ID || event.sender_id === event.receiver_id) {
       return;
     }
 

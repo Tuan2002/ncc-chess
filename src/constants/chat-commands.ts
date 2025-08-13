@@ -5,4 +5,5 @@ export const ChatCommands = {
     PLAYERS: /^\*chess players*/,
     DONATE: /^\*chess donation*/,
     INFO: /^\*chess info*/,
+    TRANSFER: /^\*chess transfer/,
 }
