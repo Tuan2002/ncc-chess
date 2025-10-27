@@ -1,8 +1,5 @@
 import { getRandomColor } from "@/helpers/color";
-import { CreatePlayerDto } from "@/models/players/create-player";
-import { plainToInstance } from "class-transformer";
 import dayjs from "dayjs";
-import { StatusCodes } from "http-status-codes";
 import { ChannelMessage, EMarkdownType, MezonClient } from "mezon-sdk";
 import QRCode from "qrcode";
 import { DonationService } from "../players/donation-service";
@@ -80,7 +77,7 @@ export class PlayersMessagesService {
           sender_id: senderId,
           receiver_id: receiverId,
           amount: Number(amount),
-          note: "Chuyển tiền thưởng giải đấu NCC Chess Vinh",
+          note: "Chuyển tiền Donation",
         };
         await this.client.sendToken(transferData);
         const replyMessage = `Đã chuyển ${Number(amount).toLocaleString("vi-VN")} VNĐ cho <${receiverId}> thành công!`;
@@ -203,7 +200,7 @@ export class PlayersMessagesService {
         embed: [
           {
             color: getRandomColor(),
-            title: `TOP 10 ĐÓNG GÓP GIẢI ĐẤU NCC CHESS VINH`,
+            title: `TOP 10 NGƯỜI QUYÊN GÓP NHIỀU NHẤT`,
             description: '```' + donationsList + '```',
             timestamp: new Date().toISOString(),
             footer: {
@@ -244,7 +241,7 @@ export class PlayersMessagesService {
         color: getRandomColor(),
         title: "THỐNG KÊ HỆ THỐNG",
         description: `
-          - Tổng số tiền quyên góp: ${Number(statistics.totalDonationAmount).toLocaleString("vi-VN")} đồng
+          - Tổng số tiền quyên góp: ${Number(statistics.totalDonationAmount).toLocaleString("vi-VN")} VNĐ
         `,
         timestamp: new Date().toISOString(),
         footer: {
