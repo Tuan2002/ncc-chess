@@ -1,16 +1,11 @@
 import { ChatCommands } from "@/constants/chat-commands";
 import { NCC_USERS } from "@/constants/ncc-users";
-import { QRCodeType } from "@/constants/qrcode-type";
 import { getRandomColor } from "@/helpers/color";
-import { CreatePlayerDto } from "@/models/players/create-player";
-import { PlayerData } from "@/models/players/player-data";
 import { NCCUser } from "@/types/ncc-user";
 import dayjs from "dayjs";
-import { StatusCodes } from "http-status-codes";
 import { ChannelMessage, EMarkdownType, MezonClient, TokenSentEvent } from "mezon-sdk";
 import { CommonMessagesService } from "../bot-messages/common-messages";
-import { PlayersMessagesService } from "../bot-messages/players-messages";
-import { PlayerService } from "../players/player-service";
+import { PlayersMessagesService } from "../bot-messages/donation-messages";
 import { DonationService } from "../players/donation-service";
 import { DonationData } from "@/models/donations/donation-data";
 import { CreateDonationDto } from "@/models/donations/create-donation";
@@ -19,20 +14,20 @@ class MezonBotService {
   private client: MezonClient;
   private _commonMessagesService: CommonMessagesService;
   private _playersMessagesService: PlayersMessagesService;
-  private _playerService: PlayerService;
   private _donationService: DonationService;
 
   constructor(
     CommonMessagesService: CommonMessagesService,
     PlayersMessagesService: PlayersMessagesService,
-    PlayerService: PlayerService,
     DonationService: DonationService
   ) {
-    this.client = new MezonClient(process.env.MEZON_BOT_TOKEN);
+    this.client = new MezonClient({
+      botId: process.env.MEZON_BOT_ID,
+      token: process.env.MEZON_BOT_TOKEN
+    });
     this.client.login().then(() => {
       console.log("Mezon Bot is ready!");
     })
-    this._playerService = PlayerService;
     this._donationService = DonationService;
     this._commonMessagesService = CommonMessagesService;
     this._playersMessagesService = PlayersMessagesService;
@@ -57,20 +52,16 @@ class MezonBotService {
         this._commonMessagesService.help(event);
         break;
 
-      case commandMessage.match(ChatCommands.REGISTER)?.input:
-        this._playersMessagesService.register(event);
-        break;
-
-      case commandMessage.match(ChatCommands.PLAYERS)?.input:
-        this._playersMessagesService.getPlayers(event);
-        break;
-
       case commandMessage.match(ChatCommands.DONATE)?.input:
-        this._playersMessagesService.getDonations(event);
+        this._playersMessagesService.donation(event);
         break;
 
-      case commandMessage.match(ChatCommands.INFO)?.input:
+      case commandMessage.match(ChatCommands.DONATION)?.input:
         this._playersMessagesService.getSystemStatistics(event);
+        break;
+
+      case commandMessage.match(ChatCommands.DONATORS)?.input:
+        this._playersMessagesService.getDonations(event);
         break;
       
       case commandMessage.match(ChatCommands.TRANSFER)?.input:
@@ -86,18 +77,7 @@ class MezonBotService {
     if (event.sender_id === process.env.MEZON_BOT_ID || event.sender_id === event.receiver_id) {
       return;
     }
-
-    if (event.note === QRCodeType.DIRECT) {
-      await this.handleDirectRegister(event);
-      return;
-    }
-
-    if (event.note === QRCodeType.DONATION) {
-      await this.handleDonation(event);
-      return;
-    }
-
-    await this.handleChatRegister(event);
+    await this.handleDonation(event);
   }
 
   private async handleDonation(event: TokenSentEvent): Promise<void> {
@@ -117,7 +97,7 @@ class MezonBotService {
           event.receiver_id,
           event.sender_id,
           event.amount,
-          response.message || "Lỗi khi gửi đóng góp, vui lòng thử lại sau"
+          response.message || "Lỗi khi gửi quyên góp, vui lòng thử lại sau"
         );
         return;
       }
@@ -129,116 +109,7 @@ class MezonBotService {
         event.receiver_id,
         event.sender_id,
         event.amount,
-        "Lỗi khi xử lý đóng góp"
-      );
-    }
-  }
-
-  private async handleDirectRegister(event: TokenSentEvent): Promise<void> {
-    try {
-      if (event.amount < Number(process.env.REGISTER_FEE)) {
-        await this.refundTokenAsync(
-          event.receiver_id,
-          event.sender_id,
-          event.amount,
-          "Số tiền gửi không đủ để đăng ký giải đấu"
-        );
-        return;
-      }
-
-      const directUser: NCCUser = NCC_USERS.find(user => user.id === event.sender_id);
-      if (!directUser) {
-        await this.refundTokenAsync(
-          event.receiver_id,
-          event.sender_id,
-          event.amount,
-          "Không tìm thấy người dùng trong hệ thống");
-        return;
-      }
-
-      const registerData: CreatePlayerDto = {
-        mezonId: event.sender_id,
-        userName: directUser.username,
-        displayName: directUser?.display_name || directUser.username,
-        avatarUrl: directUser?.avatar_url,
-      };
-
-      const response = await this._playerService.directRegisterPlayer(registerData);
-      if (response.statusCode !== StatusCodes.OK) {
-        await this.refundTokenAsync(event.receiver_id, event.sender_id, event.amount, response.message);
-        return;
-      }
-
-      const dmClan = await this.client.clans.fetch('0');
-      const customer = await dmClan.users.fetch(event.sender_id);
-      if (customer) {
-        customer.sendDM({
-          t: response?.message,
-          mk: [
-            {
-              type: EMarkdownType.PRE,
-              s: 0,
-              e: response?.message?.length,
-            },
-          ],
-        });
-      }
-      await this.sendPlayerJoinedEvent(response.data);
-    } catch (error) {
-      console.error("Error in token send event:", error);
-      await this.refundTokenAsync(
-        event.receiver_id,
-        event.sender_id,
-        event.amount,
-        "Lỗi khi xử lý đăng ký giải đấu"
-      );
-    }
-  }
-
-  private async handleChatRegister(event: TokenSentEvent): Promise<void> {
-    try {
-      if (event.amount < Number(process.env.REGISTER_FEE)) {
-        await this.refundTokenAsync(
-          event.receiver_id,
-          event.sender_id,
-          event.amount,
-          "Số tiền gửi không đủ để đăng ký giải đấu");
-        return;
-      }
-
-      const response = await this._playerService.confirmRegisterAsync(event.sender_id, event.note);
-      if (response.statusCode !== StatusCodes.OK) {
-        await this.refundTokenAsync(event.receiver_id, event.sender_id, event.amount, response.message);
-        return;
-      }
-
-      const dmClan = await this.client.clans.fetch('0');
-      const customer = await dmClan.users.fetch(event.sender_id);
-      if (!customer) {
-        customer.sendDM({
-          t: response?.message,
-          mk: [
-            {
-              type: EMarkdownType.PRE,
-              s: 0,
-              e: response?.message?.length,
-            },
-          ],
-        });
-        return;
-      }
-
-      const responsePlayer = await this._playerService.getPlayerByMezonIdAsync(event.sender_id);
-      if (responsePlayer.isSuccess) {
-        await this.sendPlayerJoinedEvent(responsePlayer.data);
-      }
-    } catch (error) {
-      console.error("Error in token send event:", error);
-      await this.refundTokenAsync(
-        event.receiver_id,
-        event.sender_id,
-        event.amount,
-        "Lỗi khi xử lý đăng ký giải đấu"
+        "Lỗi khi xử lý quyên góp"
       );
     }
   }
@@ -256,47 +127,6 @@ class MezonBotService {
     }
   }
 
-  public async sendPlayerJoinedEvent(player: PlayerData): Promise<void> {
-    try {
-      const notifyChannel = await this.client.channels.fetch(process.env.NOTIFY_CHANNEL_ID);
-      if (!notifyChannel) {
-        console.error("Notify channel not found");
-        return;
-      }
-      const infoMessage =
-        `🎉 Chào mừng tuyển thủ ${player.userName} đã tham gia giải đấu NCC Chess Vinh!
-      Tên hiển thị: ${player.displayName || "Chưa cập nhật"}
-      Ngày đăng ký: ${dayjs(player.createdAt).format('DD/MM/YYYY')}
-      Hãy chuẩn bị cho những trận đấu sắp tới!`;
-      await notifyChannel.send({
-        t: infoMessage,
-        mk: [
-          {
-            type: EMarkdownType.PRE,
-            s: 0,
-            e: infoMessage.length,
-          },
-        ],
-        embed: [
-          {
-            color: getRandomColor(),
-            title: "Thông tin tuyển thủ",
-            description: `
-            Tên tuyển thủ: ${player.displayName || player.userName}
-            ELO: ${player.elo || 0}
-            Slogan: ${player?.note || "Vui là chính, giải thưởng là chủ yếu!"}
-            `,
-            thumbnail: {
-              url: player?.avatarUrl || "https://cdn.mezon.vn/1837043892743049216/1840654271217930240/1827994776956309500/857_0246x0w.webp",
-            },
-          },
-        ]
-      });
-    } catch (error) {
-      console.error("Error sending player joined event:", error);
-      return;
-    }
-  }
 
   public async sendDonationEvent(donationData: DonationData): Promise<void> {
     try {
@@ -306,7 +136,7 @@ class MezonBotService {
         return;
       }
 
-      const donationMessage = `💰 Nhận tiền ủng hộ giải đấu từ: ${donationData.userName}`;
+      const donationMessage = `💰 Nhận tiền quyên góp từ: ${donationData.userName}`;
       await notifyChannel.send({
         t: donationMessage,
         mk: [
@@ -319,10 +149,10 @@ class MezonBotService {
         embed: [
           {
             color: getRandomColor(),
-            title: "Thông tin đóng góp",
+            title: "Thông tin quyên góp",
             description: `
             Người dùng: ${donationData.userName}
-            Số tiền đã đóng góp: ${donationData.amount.toLocaleString("vi-VN") || 0} VNĐ
+            Số tiền đã quyên góp: ${donationData.amount.toLocaleString("vi-VN") || 0} đồng
             Ngày cập nhật: ${dayjs(donationData.updatedAt).format('DD/MM/YYYY')}
             `,
             thumbnail: {

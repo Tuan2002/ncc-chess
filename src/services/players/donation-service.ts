@@ -3,6 +3,7 @@ import PrismaService from "../databases/prisma-service";
 import { DonationData } from "@/models/donations/donation-data";
 import { plainToInstance } from "class-transformer";
 import { StatusCodes } from "http-status-codes";
+import { QRCodeType } from "@/constants/qrcode-type";
 
 export class DonationService {
   private _prismaService: PrismaService;
@@ -83,6 +84,50 @@ export class DonationService {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         isSuccess: false,
         message: "Lỗi máy chủ khi lấy danh sách đóng góp, vui lòng thử lại sau",
+      };
+    }
+  }
+
+
+  getQrCode(): ServiceResponse {
+    const qrCodeDonationData = JSON.stringify({
+      receiver_id: process.env.MEZON_BOT_ID,
+      receiver_name: 'NCC VINH',
+      amount: 1000,
+      note: QRCodeType.DONATION,
+    });
+
+
+    return {
+      statusCode: StatusCodes.OK,
+      isSuccess: true,
+      message: "Lấy mã QR thành công",
+      data: {
+        donationCode: qrCodeDonationData,
+      },
+    };
+  }
+
+  async getSystemStatics(): Promise<ServiceResponse> {
+    try {
+      const totalDonationAmount = await this._prismaService.donation.aggregate({
+        _sum: { amount: true },
+      });
+
+      return {
+        statusCode: StatusCodes.OK,
+        isSuccess: true,
+        message: "Lấy thống kê đăng ký thành công",
+        data: {
+          totalDonationAmount: totalDonationAmount._sum.amount || 0,
+        },
+      };
+    } catch (error) {
+      console.error("Error fetching registration statistics:", error);
+      return {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        isSuccess: false,
+        message: "Lỗi máy chủ khi lấy thống kê đăng ký, vui lòng thử lại sau",
       };
     }
   }

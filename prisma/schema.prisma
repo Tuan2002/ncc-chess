@@ -12,20 +12,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Player {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  userName    String   @unique
-  mezonId     String?  @unique
-  displayName String?
-  avatarUrl   String?
-  elo         Int      @default(0)
-  note        String?
-  registerKey String?  @unique
-  status      String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
 model Donation {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   mezonId     String   @unique

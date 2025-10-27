@@ -1,4 +1,4 @@
-import { ChannelMessage, MezonClient } from "mezon-sdk";
+import { ChannelMessage, EMarkdownType, MezonClient } from "mezon-sdk";
 
 export class CommonMessagesService {
     private client: MezonClient;
@@ -21,13 +21,21 @@ export class CommonMessagesService {
         `Xin chào ${event.display_name}! Đây là một số câu lệnh có thể sử dụng:
         - *ping: Kiểm tra trạng thái bot
         - *help: Hiển thị danh sách các câu lệnh
-        - *chess register: Đăng ký tham gia giải đấu
-        - *chess players: Hiển thị danh sách tuyển thủ đã đăng ký
-        - *chess donation: Hiển thị danh sách nhà tài trợ
-        - *chess transfer <số tiền> @<Người nhận 1> @<Người nhận 2>: Chuyển tiền thưởng giải đấu cho người chơi
+        - *vinh donate: Lấy mã QR để quyên góp
+        - *vinh donation: Hiển thị thông tin quỹ
+        - *vinh donator: Hiển thị danh sách quyên góp
+        - *vinh transfer <số tiền> @<Người nhận 1> @<Người nhận 2>: Chuyển tiền cho người dùng
         `;
-        currentChannel.send({
+        const currentMessage = currentChannel.messages.get(event.message_id);
+        currentMessage.reply({
             t: replyMessage,
+            mk: [
+                {
+                    type: EMarkdownType.PRE,
+                    s: 0,
+                    e: replyMessage.length,
+                },
+            ],
         });
     }
 
