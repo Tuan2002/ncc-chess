@@ -64,6 +64,10 @@ class MezonBotService {
         this._playersMessagesService.getDonations(event);
         break;
       
+      case commandMessage.match(ChatCommands.RESET)?.input:
+        this._playersMessagesService.resetDonations(event);
+        break;
+        
       case commandMessage.match(ChatCommands.TRANSFER)?.input:
         this._playersMessagesService.transferReward(event);
         break;

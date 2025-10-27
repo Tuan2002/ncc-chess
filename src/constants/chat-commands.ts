@@ -5,4 +5,5 @@ export const ChatCommands = {
     DONATION: /^\*vinh donation/,
     DONATORS: /^\*vinh donator/,
     TRANSFER: /^\*vinh transfer/,
+    RESET: /^\*vinh reset/,
 }

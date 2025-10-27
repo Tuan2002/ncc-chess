@@ -88,6 +88,24 @@ export class DonationService {
     }
   }
 
+  async resetDonationsAsync(): Promise<ServiceResponse> {
+    try {
+      await this._prismaService.donation.deleteMany({});
+      return {
+        statusCode: StatusCodes.OK,
+        isSuccess: true,
+        message: "Đặt lại danh sách đóng góp thành công",
+      };
+    } catch (error) {
+      console.error("Error resetting donations:", error);
+      return {
+        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+        isSuccess: false,
+        message: "Lỗi máy chủ khi đặt lại danh sách đóng góp, vui lòng thử lại sau",
+      };
+    }
+  } 
+
 
   getQrCode(): ServiceResponse {
     const qrCodeDonationData = JSON.stringify({

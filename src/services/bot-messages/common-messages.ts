@@ -24,6 +24,7 @@ export class CommonMessagesService {
         - *vinh donate: Lấy mã QR để quyên góp
         - *vinh donation: Hiển thị thông tin quỹ
         - *vinh donator: Hiển thị danh sách quyên góp
+        - *vinh reset: Đặt lại danh sách đóng góp
         - *vinh transfer <số tiền> @<Người nhận 1> @<Người nhận 2>: Chuyển tiền cho người dùng
         `;
         const currentMessage = currentChannel.messages.get(event.message_id);

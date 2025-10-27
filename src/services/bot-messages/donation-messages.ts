@@ -158,6 +158,70 @@ export class PlayersMessagesService {
     };
   }
 
+  public async resetDonations(event: ChannelMessage): Promise<void> {
+    try {
+      const currentChannel = this.client.channels.get(event.channel_id);
+      if (!currentChannel) {
+        return;
+      }
+      const currentMessage: Message = currentChannel.messages.get(event.message_id);
+      const senderId = event.sender_id;
+      if (senderId !== process.env.BOT_OWNER_ID) {
+        const replyMessage = `Chỉ có quản trị bot mới có thể thực hiện lệnh này.`;
+        await currentMessage.reply({
+          t: replyMessage,
+          mk: [
+            {
+              type: EMarkdownType.PRE,
+              s: 0,
+              e: replyMessage.length,
+            },
+          ],
+        });
+        return;
+      }
+      
+      const response = await this.donationService.resetDonationsAsync();
+      if (!response || !response.isSuccess) {
+        await currentChannel.send({
+          t: response?.message || "Lỗi khi đặt lại danh sách đóng góp, vui lòng thử lại sau",
+          mk: [
+            {
+              type: EMarkdownType.PRE,
+              s: 0,
+              e: response?.message?.length || 0,
+            },
+          ],
+        });
+        return;
+      }
+      await currentMessage.reply({
+        t: response.message,
+        mk: [
+          {
+            type: EMarkdownType.PRE,
+            s: 0,
+            e: response.message.length,
+          },
+        ],
+      });
+    } catch (error) {
+      const currentChannel = this.client.channels.get(event.channel_id);
+      if (currentChannel) {
+        await currentChannel.send({
+          t: error.message,
+          mk: [
+            {
+              type: EMarkdownType.PRE,
+              s: 0,
+              e: error?.message?.length,
+            },
+          ],
+        });
+      }
+    }
+  }
+
   public async getDonations(event: ChannelMessage): Promise<void> {
     try {
       const currentChannel = this.client.channels.get(event.channel_id);
