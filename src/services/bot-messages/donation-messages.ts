@@ -256,15 +256,12 @@ export class PlayersMessagesService {
         return;
       }
       const donationsList = donations.map((donation, index) =>
-        `${index + 1}. ${donation.userName}
-        - Số tiền đã đóng góp: ${donation.amount.toLocaleString("vi-VN") || 0} VNĐ
-        - Ngày cập nhật: ${dayjs(donation.updatedAt).format('DD/MM/YYYY')}
-      `).join('\n');
+        `${index + 1}. ${donation.userName}: ${donation.amount.toLocaleString("vi-VN") || 0} VNĐ`).join('\n');
       await currentChannel.send({
         embed: [
           {
             color: getRandomColor(),
-            title: `TOP 10 NGƯỜI QUYÊN GÓP NHIỀU NHẤT`,
+            title: `TOP 30 NGƯỜI QUYÊN GÓP NHIỀU NHẤT`,
             description: '```' + donationsList + '```',
             timestamp: new Date().toISOString(),
             footer: {
