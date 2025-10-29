@@ -23,7 +23,7 @@ export class CommonMessagesService {
         - *help: Hiển thị danh sách các câu lệnh
         - *vinh donate: Lấy mã QR để quyên góp
         - *vinh donation: Hiển thị thông tin quỹ
-        - *vinh donator: Hiển thị danh sách quyên góp
+        - *vinh donator @<Tên người dùng> (Optional): Hiển thị danh sách quyên góp
         - *vinh reset: Đặt lại danh sách đóng góp
         - *vinh transfer <số tiền> @<Người nhận 1> @<Người nhận 2>: Chuyển tiền cho người dùng
         `;

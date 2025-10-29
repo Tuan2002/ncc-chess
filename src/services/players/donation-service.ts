@@ -66,10 +66,11 @@ export class DonationService {
     }
   }
 
-  async getAllDonationsAsync(): Promise<ServiceResponse> {
+  async getAllDonationsAsync(mezonIds?: string[]): Promise<ServiceResponse> {
     try {
       const donations = await this._prismaService.donation.findMany({
         orderBy: { amount: "desc" },
+        where: mezonIds && mezonIds.length > 0 ? { mezonId: { in: [...mezonIds] } } : {},
         take: 30,
       });
       return {

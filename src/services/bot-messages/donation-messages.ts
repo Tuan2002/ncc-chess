@@ -228,7 +228,8 @@ export class PlayersMessagesService {
       if (!currentChannel) {
         return;
       }
-      const response = await this.donationService.getAllDonationsAsync();
+      const mentionIds = event.mentions?.map(m => m.user_id) || [];
+      const response = await this.donationService.getAllDonationsAsync(mentionIds);
       if (!response || !response.isSuccess) {
         await currentChannel.send({
           t: response?.message || "Lỗi khi lấy danh sách đóng góp, vui lòng thử lại sau",
@@ -261,7 +262,8 @@ export class PlayersMessagesService {
         embed: [
           {
             color: getRandomColor(),
-            title: `TOP 30 NGƯỜI QUYÊN GÓP NHIỀU NHẤT`,
+            title: mentionIds && mentionIds?.length > 0 
+            ? "THÔNG TIN QUYÊN GÓP" : `TOP 30 NGƯỜI QUYÊN GÓP NHIỀU NHẤT`,
             description: '```' + donationsList + '```',
             timestamp: new Date().toISOString(),
             footer: {
