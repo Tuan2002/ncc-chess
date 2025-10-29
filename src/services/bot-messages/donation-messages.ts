@@ -125,7 +125,7 @@ export class PlayersMessagesService {
       });
       const qrCodeURL = await QRCode.toDataURL(qrCodeData);
       await currentMessage.reply({
-       embed: [
+        embed: [
           {
             title: 'Quyên góp NCC VINH',
             description: `Quét mã QR hoặc gửi TOKEN cho BOT để quyên góp!`,
@@ -180,7 +180,7 @@ export class PlayersMessagesService {
         });
         return;
       }
-      
+
       const response = await this.donationService.resetDonationsAsync();
       if (!response || !response.isSuccess) {
         await currentChannel.send({
@@ -224,12 +224,16 @@ export class PlayersMessagesService {
 
   public async getDonations(event: ChannelMessage): Promise<void> {
     try {
+      const DEFAULT_TAKE = 30;
       const currentChannel = this.client.channels.get(event.channel_id);
       if (!currentChannel) {
         return;
       }
+
+      const [prefix, command, value, ...args] = event.content?.t?.split(" ");
+      const take = value && !isNaN(Number(value)) && Math.abs(Number(value)) > 0 ? Number(value) : DEFAULT_TAKE;
       const mentionIds = event.mentions?.map(m => m.user_id) || [];
-      const response = await this.donationService.getAllDonationsAsync(mentionIds);
+      const response = await this.donationService.getAllDonationsAsync(mentionIds, take);
       if (!response || !response.isSuccess) {
         await currentChannel.send({
           t: response?.message || "Lỗi khi lấy danh sách đóng góp, vui lòng thử lại sau",
@@ -258,12 +262,13 @@ export class PlayersMessagesService {
       }
       const donationsList = donations.map((donation, index) =>
         `${index + 1}. ${donation.userName}: ${donation.amount.toLocaleString("vi-VN") || 0} VNĐ`).join('\n');
+
       await currentChannel.send({
         embed: [
           {
             color: getRandomColor(),
             title: mentionIds && mentionIds?.length > 0 
-            ? "THÔNG TIN QUYÊN GÓP" : `TOP 30 NGƯỜI QUYÊN GÓP NHIỀU NHẤT`,
+            ? "THÔNG TIN QUYÊN GÓP" : `TOP ${take} NGƯỜI QUYÊN GÓP NHIỀU NHẤT`,
             description: '```' + donationsList + '```',
             timestamp: new Date().toISOString(),
             footer: {
@@ -274,6 +279,7 @@ export class PlayersMessagesService {
           },
         ]
       });
+
     } catch (error) {
       console.error("Error fetching donations:", error);
     }
