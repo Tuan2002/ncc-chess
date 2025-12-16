@@ -3,6 +3,8 @@ import { ChannelMessage, EMarkdownType, MezonClient } from "mezon-sdk";
 import QRCode from "qrcode";
 import { DonationService } from "../players/donation-service";
 import { Message } from "mezon-sdk/dist/cjs/mezon-client/structures/Message";
+import { MmnClient } from "mmn-client-js";
+import { NumberUtil } from "@/helpers/number-format";
 export class PlayersMessagesService {
 
   private client: MezonClient;
@@ -340,8 +342,8 @@ export class PlayersMessagesService {
         embed: [
           {
             color: getRandomColor(),
-            title: mentionIds && mentionIds?.length > 0 
-            ? "THÔNG TIN QUYÊN GÓP" : `TOP ${take} NGƯỜI QUYÊN GÓP NHIỀU NHẤT`,
+            title: mentionIds && mentionIds?.length > 0
+              ? "THÔNG TIN QUYÊN GÓP" : `TOP ${take} NGƯỜI QUYÊN GÓP NHIỀU NHẤT`,
             description: '```' + donationsList + '```',
             timestamp: new Date().toISOString(),
             footer: {
@@ -379,11 +381,21 @@ export class PlayersMessagesService {
         return;
       }
       const statistics = response.data;
+
+      const DEFAULT_TIMEOUT = 2000
+      const mmnClient = new MmnClient({
+        baseUrl: 'https://dong.mezon.ai/mmn-api',
+        timeout: DEFAULT_TIMEOUT,
+      })
+      const botAccount = await mmnClient.getAccountByUserId(process.env.MEZON_BOT_ID);
+      const botBalance =  Number(botAccount.balance) > 0 ? NumberUtil.toScaled(botAccount.balance) : 0;
+
       const embedMessage = {
         color: getRandomColor(),
         title: "THỐNG KÊ HỆ THỐNG",
         description: `
           - Tổng số tiền quyên góp: ${Number(statistics.totalDonationAmount).toLocaleString("vi-VN")} VNĐ
+          - Số tiền quỹ hiện tại: ${botBalance.toLocaleString("vi-VN")} VNĐ
         `,
         timestamp: new Date().toISOString(),
         footer: {
