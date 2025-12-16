@@ -72,6 +72,10 @@ class MezonBotService {
         this._playersMessagesService.transferReward(event);
         break;
 
+      case commandMessage.match(ChatCommands.WITHDRAW)?.input:
+        this._playersMessagesService.withdrawFunds(event);
+        break;
+
       default:
         break;
     }

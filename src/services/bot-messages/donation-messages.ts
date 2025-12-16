@@ -1,5 +1,4 @@
 import { getRandomColor } from "@/helpers/color";
-import dayjs from "dayjs";
 import { ChannelMessage, EMarkdownType, MezonClient } from "mezon-sdk";
 import QRCode from "qrcode";
 import { DonationService } from "../players/donation-service";
@@ -21,11 +20,11 @@ export class PlayersMessagesService {
 
   public async transferReward(event: ChannelMessage): Promise<void> {
     try {
-      const currentChannel = this.client.channels.get(event.channel_id);
+      const currentChannel = await this.client.channels.fetch(event.channel_id);
       if (!currentChannel) {
         return;
       }
-      const currentMessage: Message = currentChannel.messages.get(event.message_id);
+      const currentMessage: Message = await currentChannel.messages.fetch(event.message_id);
       const senderId = event.sender_id;
       if (senderId !== process.env.BOT_OWNER_ID) {
         const replyMessage = `Chỉ có quản trị bot mới có thể thực hiện lệnh này.`;
@@ -74,14 +73,13 @@ export class PlayersMessagesService {
       }
       await Promise.all(receiverIds.map(async (receiverId) => {
         const transferData = {
-          sender_id: senderId,
           receiver_id: receiverId,
           amount: Number(amount),
           note: "Chuyển tiền Donation",
         };
         await this.client.sendToken(transferData);
         const replyMessage = `Đã chuyển ${Number(amount).toLocaleString("vi-VN")} VNĐ cho <${receiverId}> thành công!`;
-        await currentMessage.reply({
+        await currentMessage?.reply({
           t: replyMessage,
           mk: [
             {
@@ -93,9 +91,84 @@ export class PlayersMessagesService {
         });
       }));
     } catch (error) {
-      const currentChannel = this.client.channels.get(event.channel_id);
+      const currentChannel = await this.client.channels.fetch(event.channel_id);
       if (currentChannel) {
-        const currentMessage: Message = currentChannel.messages.get(event.message_id);
+        const currentMessage: Message = await currentChannel.messages.fetch(event.message_id);
+        await currentMessage.reply({
+          t: error.message,
+          mk: [
+            {
+              type: EMarkdownType.PRE,
+              s: 0,
+              e: error?.message?.length,
+            },
+          ],
+        });
+      }
+    }
+  }
+
+  public async withdrawFunds(event: ChannelMessage): Promise<void> {
+    try {
+      const currentChannel = await this.client.channels.fetch(event.channel_id);
+      if (!currentChannel) {
+        return;
+      }
+      const currentMessage: Message = await currentChannel.messages.fetch(event.message_id);
+      const ownerId = process.env.BOT_OWNER_ID;
+      const senderId = event.sender_id;
+      if (senderId !== ownerId) {
+        const replyMessage = `Chỉ có quản trị bot mới có thể thực hiện lệnh này.`;
+        await currentMessage.reply({
+          t: replyMessage,
+          mk: [
+            {
+              type: EMarkdownType.PRE,
+              s: 0,
+              e: replyMessage.length,
+            },
+          ],
+        });
+        return;
+      }
+      const [prefix, command, amount] = event.content?.t?.split(" ");
+      if (!amount || isNaN(Number(amount)) || Number(amount) <= 0) {
+        const replyMessage = `Vui lòng cung cấp số tiền hợp lệ để rút.`;
+        await currentMessage.reply({
+          t: replyMessage,
+          mk: [
+            {
+              type: EMarkdownType.PRE,
+              s: 0,
+              e: replyMessage.length,
+            },
+          ],
+        }
+        );
+        return;
+      }
+
+      this.client.sendToken({
+        receiver_id: ownerId,
+        amount: Number(amount),
+        note: "Rút tiền từ quỹ Vinh",
+      });
+
+      const replyMessage = `Đã rút ${Number(amount).toLocaleString("vi-VN")} VNĐ từ quỹ thành công!`;
+      await currentMessage?.reply({
+        t: replyMessage,
+        mk: [
+          {
+            type: EMarkdownType.PRE,
+            s: 0,
+            e: replyMessage.length,
+          },
+        ],
+      });
+    } catch (error) {
+      const currentChannel = await this.client.channels.fetch(event.channel_id);
+      if (currentChannel) {
+        const currentMessage: Message = await currentChannel.messages.fetch(event.message_id);
         await currentMessage.reply({
           t: error.message,
           mk: [
@@ -112,12 +185,12 @@ export class PlayersMessagesService {
 
   public async donation(event: ChannelMessage): Promise<void> {
     try {
-      const currentChannel = this.client.channels.get(event.channel_id);
+      const currentChannel = await this.client.channels.fetch(event.channel_id);
       if (!currentChannel) {
         return;
       }
 
-      const currentMessage: Message = currentChannel.messages.get(event.message_id);
+      const currentMessage: Message = await currentChannel.messages.fetch(event.message_id);
 
       const qrCodeData = JSON.stringify({
         receiver_id: process.env.MEZON_BOT_ID,
@@ -142,7 +215,7 @@ export class PlayersMessagesService {
       });
 
     } catch (error) {
-      const currentChannel = this.client.channels.get(event.channel_id);
+      const currentChannel = await this.client.channels.fetch(event.channel_id);
       if (currentChannel) {
         await currentChannel.send({
           t: error.message,
@@ -160,11 +233,11 @@ export class PlayersMessagesService {
 
   public async resetDonations(event: ChannelMessage): Promise<void> {
     try {
-      const currentChannel = this.client.channels.get(event.channel_id);
+      const currentChannel = await this.client.channels.fetch(event.channel_id);
       if (!currentChannel) {
         return;
       }
-      const currentMessage: Message = currentChannel.messages.get(event.message_id);
+      const currentMessage: Message = await currentChannel.messages.fetch(event.message_id);
       const senderId = event.sender_id;
       if (senderId !== process.env.BOT_OWNER_ID) {
         const replyMessage = `Chỉ có quản trị bot mới có thể thực hiện lệnh này.`;
@@ -206,7 +279,7 @@ export class PlayersMessagesService {
         ],
       });
     } catch (error) {
-      const currentChannel = this.client.channels.get(event.channel_id);
+      const currentChannel = await this.client.channels.fetch(event.channel_id);
       if (currentChannel) {
         await currentChannel.send({
           t: error.message,
@@ -225,7 +298,7 @@ export class PlayersMessagesService {
   public async getDonations(event: ChannelMessage): Promise<void> {
     try {
       const DEFAULT_TAKE = 30;
-      const currentChannel = this.client.channels.get(event.channel_id);
+      const currentChannel = await this.client.channels.fetch(event.channel_id);
       if (!currentChannel) {
         return;
       }
@@ -287,7 +360,7 @@ export class PlayersMessagesService {
 
   public async getSystemStatistics(event: ChannelMessage): Promise<void> {
     try {
-      const currentChannel = this.client.channels.get(event.channel_id);
+      const currentChannel = await this.client.channels.fetch(event.channel_id);
       if (!currentChannel) {
         return;
       }
