@@ -148,7 +148,7 @@ export class PlayersMessagesService {
         return;
       }
 
-      this.client.sendToken({
+      await this.client.sendToken({
         receiver_id: ownerId,
         amount: Number(amount),
         note: "Rút tiền từ quỹ Vinh",
